@@ -44,6 +44,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
+import axios from 'axios'
 import { User } from '../types/User'
 import UserDialog from '../components/UserDialog.vue'
 
@@ -53,31 +54,27 @@ const selectedUser = ref<User | null>(null)
 const deleteConfirmation = ref(false)
 
 const headers = [
-  { title: 'Username', key: 'username' },
-  { title: 'Roles', key: 'roles' },
-  { title: 'Timezone', key: 'timezone' },
-  { title: 'Is Active?', key: 'isActive' },
-  { title: 'Last Updated At', key: 'lastUpdatedAt' },
-  { title: 'Created At', key: 'createdAt' },
-  { title: 'Actions', key: 'actions', sortable: false }
+  { text: 'Username', value: 'username' },
+  { text: 'Roles', value: 'roles' },
+  { text: 'Timezone', value: 'timezone' },
+  { text: 'Is Active?', value: 'active' },
+  { text: 'Last Updated At', value: 'updated_ts' },
+  { text: 'Created At', value: 'created_ts' },
+  { text: 'Actions', value: 'actions', sortable: false }
 ]
 
 onMounted(() => {
-  // Fetch users from API
-  // For now, we'll use mock data
-  users.value = [
-    {
-      id: 1,
-      username: 'john_doe',
-      roles: ['User'],
-      timezone: 'UTC',
-      isActive: true,
-      lastUpdatedAt: '2023-04-15T10:30:00Z',
-      createdAt: '2023-04-01T09:00:00Z'
-    },
-    // Add more mock users here
-  ]
+  fetchUsers()
 })
+
+const fetchUsers = async () => {
+  try {
+    const response = await axios.get('http://127.0.0.1:5000/users')
+    users.value = response.data
+  } catch (error) {
+    console.error('Error fetching users:', error)
+  }
+}
 
 const openCreateDialog = () => {
   selectedUser.value = null
@@ -89,19 +86,21 @@ const openEditDialog = (user: User) => {
   dialogVisible.value = true
 }
 
-const saveUser = (user: User) => {
-  if (user.id) {
-    // Update existing user
-    const index = users.value.findIndex(u => u.id === user.id)
-    if (index !== -1) {
-      users.value[index] = user
+const saveUser = async (user: User) => {
+  try {
+    if (user.id) {
+      // Atualiza o usuário existente
+      await axios.put(`http://127.0.0.1:5000/users/${user.id}`, user)
+    } else {
+      // Cria um novo usuário
+      const response = await axios.post('http://127.0.0.1:5000/users/', user)
+      user.id = response.data.id
     }
-  } else {
-    // Create new user
-    user.id = users.value.length + 1
-    users.value.push(user)
+    fetchUsers()
+    dialogVisible.value = false
+  } catch (error) {
+    console.error('Error saving user:', error)
   }
-  dialogVisible.value = false
 }
 
 const confirmDelete = (user: User) => {
@@ -109,10 +108,15 @@ const confirmDelete = (user: User) => {
   deleteConfirmation.value = true
 }
 
-const deleteUser = () => {
+const deleteUser = async () => {
   if (selectedUser.value) {
-    users.value = users.value.filter(u => u.id !== selectedUser.value?.id)
-    deleteConfirmation.value = false
+    try {
+      await axios.delete(`http://127.0.0.1:5000/users/${selectedUser.value.id}`)
+      fetchUsers()
+      deleteConfirmation.value = false
+    } catch (error) {
+      console.error('Error deleting user:', error)
+    }
   }
 }
 </script>
