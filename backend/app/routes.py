@@ -46,7 +46,7 @@ def update_user(user_id):
     
     updated_data = {
         'username': data['username'],
-        'password': data['password'],
+        'password': data.get('password', user['password']),
         'roles': data['roles'],
         'preferences': {
             'timezone': data['timezone']
