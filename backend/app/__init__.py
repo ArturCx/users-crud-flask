@@ -3,7 +3,7 @@ from flask_cors import CORS
 from pymongo import MongoClient
 from config import Config
 
-client = MongoClient(Config.MONGO_URI)
+client = MongoClient(Config.MONGO_HOST, Config.MONGO_PORT)
 db = client[Config.MONGO_DB_NAME]
 
 def create_app():

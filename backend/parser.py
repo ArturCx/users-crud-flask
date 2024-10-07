@@ -2,9 +2,10 @@ import json
 from pymongo import MongoClient
 from dataclasses import dataclass
 from datetime import datetime
+from config import Config
 
-client = MongoClient("localhost", 27017)
-db = client['user_database']
+client = MongoClient(Config.MONGO_HOST, Config.MONGO_PORT)
+db = client[Config.MONGO_DB_NAME]
 collection = db['users']
 
 @dataclass
@@ -43,6 +44,9 @@ def import_data():
         users = []
         for item in users_data:
             if isinstance(item, dict):
+                if collection.find_one({'username': item.get('user')}):
+                    print(f'Usuário {item.get("user")} já existe no banco de dados. Pulando...')
+                    continue
                 user = User(
                     username=item.get('user'), 
                     password=item.get('password'),
