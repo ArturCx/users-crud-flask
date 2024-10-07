@@ -101,24 +101,28 @@ const openEditDialog = (user: User) => {
 
 const saveUser = async (user: User) => {
   try {
+    if (!user.password && user.id) {
+      const currentUser = await axios.get(`http://127.0.0.1:5000/users/${user.id}`);
+      user.password = currentUser.data.password;
+    }
     if (user.id) {
       // Atualiza o usuário existente
-      await axios.put(`http://127.0.0.1:5000/users/${user.id}`, user)
+      await axios.put(`http://127.0.0.1:5000/users/${user.id}`, user);
     } else {
       // Cria um novo usuário
       const response = await axios.post('http://127.0.0.1:5000/users', user, {
         headers: {
           'Content-Type': 'application/json'
         }
-      })
-      user.id = response.data.id
+      });
+      user.id = response.data.id;
     }
-    fetchUsers()
-    dialogVisible.value = false
+    fetchUsers();  
+    dialogVisible.value = false; 
   } catch (error) {
-    console.error('Error saving user:', error)
+    console.error('Error saving user:', error);
   }
-}
+};
 
 const confirmDelete = (user: User) => {
   selectedUser.value = user
