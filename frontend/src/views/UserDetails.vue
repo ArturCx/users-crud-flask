@@ -4,10 +4,9 @@
       <v-col cols="12" sm="8" md="6" lg="4">
         <div v-if="user" class="text-center">
           
-          <h1 class="mb-4">Details of {{ user.username }}</h1>
-
           <v-card class="mb-4 rounded-lg" max-width="500" width="100%">
             <v-list>
+              <h1 class="mb-4">Details of {{ user.username }}</h1>
               <v-list-item>
                 <v-list-item-title>Username</v-list-item-title>
                 <v-list-item-subtitle>{{ user.username }}</v-list-item-subtitle>
@@ -33,7 +32,7 @@
                 <v-list-item-subtitle>{{ convertTimestampToISO(user.created_ts) }}</v-list-item-subtitle>
               </v-list-item>
             </v-list>
-            
+
             <v-card-actions class="justify-center">
               <v-btn color="primary" class="mr-2" @click="openEditDialog(user)">Edit</v-btn>
               <v-btn color="error" @click="confirmDelete">Delete</v-btn>
