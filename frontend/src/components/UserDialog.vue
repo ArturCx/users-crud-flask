@@ -15,9 +15,15 @@
                 ></v-text-field>
               </v-col>
               <v-col cols="12">
+                <v-text-field
+                  v-model="editedUser.password"
+                  label="Password"
+                ></v-text-field>
+              </v-col>
+              <v-col cols="12">
                 <v-select
                   v-model="editedUser.roles"
-                  :items="['User', 'Admin', 'Moderator']"
+                  :items="['user', 'admin', 'moderator']"
                   label="Roles"
                   multiple
                   chips
@@ -31,7 +37,7 @@
               </v-col>
               <v-col cols="12">
                 <v-switch
-                  v-model="editedUser.isActive"
+                  v-model="editedUser.active"
                   label="Is Active?"
                 ></v-switch>
               </v-col>
@@ -70,11 +76,12 @@
   const editedUser = ref<User>({
     id: 0,
     username: '',
+    password: '',
     roles: [],
     timezone: '',
-    isActive: true,
-    lastUpdatedAt: '',
-    createdAt: ''
+    active: true,
+    updated_ts: '',
+    created_ts: ''
   })
   
   const formTitle = computed(() => {
@@ -88,11 +95,12 @@
       editedUser.value = {
         id: 0,
         username: '',
+        password: '',
         roles: [],
         timezone: '',
-        isActive: true,
-        lastUpdatedAt: '',
-        createdAt: ''
+        active: true,
+        updated_ts: '',
+        created_ts: ''
       }
     }
   })

@@ -5,12 +5,19 @@
       <v-data-table
         :headers="headers"
         :items="users"
+        :hide-default-header="false"
       >
-        <template v-slot:item.username="{ item }">
-          <router-link :to="{ name: 'UserDetails', params: { id: item.id } }">
-            {{ item.username }}
-          </router-link>
-        </template>
+      <template v-slot:item.username="{ item }">
+        <router-link :to="{ name: 'UserDetails', params: { id: item.id } }">
+          {{ item.username }}
+        </router-link>
+      </template>
+      <template v-slot:item.created_ts="{ item }">
+      {{ convertTimestampToISO(item.created_ts) }}
+      </template>
+      <template v-slot:item.updated_ts="{ item }">
+      {{ convertTimestampToISO(item.updated_ts) }}
+      </template>
         <template v-slot:item.actions="{ item }">
           <v-btn icon @click="openEditDialog(item)">
             <v-icon>mdi-pencil</v-icon>
@@ -54,14 +61,20 @@ const selectedUser = ref<User | null>(null)
 const deleteConfirmation = ref(false)
 
 const headers = [
-  { text: 'Username', value: 'username' },
-  { text: 'Roles', value: 'roles' },
-  { text: 'Timezone', value: 'timezone' },
-  { text: 'Is Active?', value: 'active' },
-  { text: 'Last Updated At', value: 'updated_ts' },
-  { text: 'Created At', value: 'created_ts' },
-  { text: 'Actions', value: 'actions', sortable: false }
+  { title: 'Username', value: 'username' },
+  { title: 'Roles', value: 'roles' },
+  { title: 'Timezone', value: 'timezone' },
+  { title: 'Is Active?', value: 'active' },
+  { title: 'Last Updated At', value: 'updated_ts' },
+  { title: 'Created At', value: 'created_ts' },
+  { title: 'Actions', value: 'actions', sortable: false }
 ]
+
+function convertTimestampToISO(timestamp: string | number): string {
+  const timestampNumber = typeof timestamp === 'string' ? parseFloat(timestamp) : timestamp;
+  const date = new Date(timestampNumber * 1000);
+  return date.toISOString().replace('T', ' ').split('.')[0];  
+}
 
 onMounted(() => {
   fetchUsers()
@@ -70,7 +83,7 @@ onMounted(() => {
 const fetchUsers = async () => {
   try {
     const response = await axios.get('http://127.0.0.1:5000/users')
-    users.value = response.data
+    users.value = response.data.sort((a: User, b: User) => Number(b.created_ts) - Number(a.created_ts))
   } catch (error) {
     console.error('Error fetching users:', error)
   }
@@ -82,7 +95,7 @@ const openCreateDialog = () => {
 }
 
 const openEditDialog = (user: User) => {
-  selectedUser.value = { ...user }
+  selectedUser.value = user 
   dialogVisible.value = true
 }
 
@@ -93,7 +106,11 @@ const saveUser = async (user: User) => {
       await axios.put(`http://127.0.0.1:5000/users/${user.id}`, user)
     } else {
       // Cria um novo usuário
-      const response = await axios.post('http://127.0.0.1:5000/users/', user)
+      const response = await axios.post('http://127.0.0.1:5000/users', user, {
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      })
       user.id = response.data.id
     }
     fetchUsers()

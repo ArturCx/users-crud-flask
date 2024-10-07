@@ -1,9 +1,10 @@
 export interface User {
-  id: number;
+  id: number | string;
   username: string;
+  password: string;
   roles: string[];
   timezone: string;
-  isActive: boolean;
-  lastUpdatedAt: string;
-  createdAt: string;
+  active: boolean;
+  created_ts: string;
+  updated_ts: string;
 }
