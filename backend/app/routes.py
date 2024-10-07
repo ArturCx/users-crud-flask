@@ -1,4 +1,4 @@
-from flask import Blueprint, jsonify, request, abort
+from flask import Blueprint, jsonify, make_response, request, abort
 from app import db
 from bson.objectid import ObjectId
 from app.models import User, UserPreferences
@@ -6,39 +6,37 @@ from datetime import datetime
 
 main = Blueprint('main', __name__)
 
-# Helper function to parse roles
-def parse_roles(data):
-    roles = []
-    if data.get('is_user_admin'):
-        roles.append('admin')
-    if data.get('is_user_manager'):
-        roles.append('manager')
-    if data.get('is_user_tester'):
-        roles.append('tester')
-    return roles
+# Criar novo usuário
+@main.route('/users', methods=['POST'])
+def create_user():
+    data = request.json
+    now = datetime.now()
+    user = User(
+        username=data['username'],
+        password=data['password'],
+        roles=data['roles'],
+        preferences=UserPreferences(data['timezone']).__dict__,
+        active=data.get('is_user_active', True),
+        created_ts=now.timestamp(),
+    )
+    inserted_id = db.users.insert_one(user.__dict__).inserted_id
+    return jsonify({'id': str(inserted_id)}), 201
 
-# Route to get all users
+# Pegar um usuário específico
+@main.route('/users/<user_id>', methods=['GET'])
+def get_user(user_id):
+    user = db.users.find_one({'_id': ObjectId(user_id)})
+    if not user:
+        abort(404, description="User not found")
+    return jsonify(user_serializer(user))
+
+# Pegar todos os usuários
 @main.route('/users', methods=['GET'])
 def get_users():
     users = list(db.users.find())
     return jsonify([user_serializer(user) for user in users])
 
-# Route to create a new user
-@main.route('/users', methods=['POST'])
-def create_user():
-    data = request.json
-    user = User(
-        username=data['user'],
-        password=data['password'],
-        roles=parse_roles(data),
-        preferences=UserPreferences(data['user_timezone']),
-        active=data.get('is_user_active', True),
-        created_ts=datetime.strptime(data['created_at'], '%Y-%m-%dT%H:%M:%SZ').timestamp()
-    )
-    inserted_id = db.users.insert_one(user.__dict__).inserted_id
-    return jsonify({'id': str(inserted_id)}), 201
-
-# Route to update a user
+# Atualizar um usuário
 @main.route('/users/<user_id>', methods=['PUT'])
 def update_user(user_id):
     data = request.json
@@ -47,20 +45,20 @@ def update_user(user_id):
         abort(404, description="User not found")
     
     updated_data = {
-        'username': data.get('user', user['username']),
-        'password': data.get('password', user['password']),
-        'roles': parse_roles(data),
+        'username': data['username'],
+        'password': data['password'],
+        'roles': data['roles'],
         'preferences': {
-            'timezone': data['user_timezone']
+            'timezone': data['timezone']
         },
-        'active': data.get('is_user_active', user['active']),
+        'active': data['active'],
         'updated_ts': datetime.now().timestamp()
     }
     
     db.users.update_one({'_id': ObjectId(user_id)}, {'$set': updated_data})
     return jsonify({'msg': 'User updated successfully'})
 
-# Route to delete a user
+# Deletar usuário
 @main.route('/users/<user_id>', methods=['DELETE'])
 def delete_user(user_id):
     user = db.users.find_one({'_id': ObjectId(user_id)})
@@ -70,7 +68,6 @@ def delete_user(user_id):
     db.users.delete_one({'_id': ObjectId(user_id)})
     return jsonify({'msg': 'User deleted successfully'})
 
-# Helper function to serialize user
 def user_serializer(user):
     return {
         'id': str(user['_id']),
